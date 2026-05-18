@@ -70,7 +70,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '.')));
 
 // ─── SMTP CONFIG ─────────────────────────────────────────────────────────────
 const SMTP = {
@@ -340,7 +340,7 @@ app.post('/api/preview', upload.single('htmlFile'), (req, res) => {
 
 // Serve UI
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '.', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
