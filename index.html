@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANABION / Email Sender</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#18141F;--bg2:#201C28;--bg3:#2A2535;--surf:#2E2838;--surf2:#352E40;--brd:rgba(255,255,255,0.07);--brd2:rgba(255,255,255,0.14);--ink:#F2EDF8;--ink2:#B8AECE;--ink3:#7A6E8A;--acc:#C8506A;--grad:linear-gradient(135deg,#6B2057,#A8305A 55%,#C8506A)}
+html,body{height:100%;font-family:'Syne',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;align-items:center;padding:0;min-height:100vh}
+
+/* TOPBAR */
+.topbar{width:100%;background:var(--bg2);border-bottom:1px solid var(--brd);padding:0 32px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-ico{width:32px;height:32px;border-radius:9px;background:var(--grad);display:grid;place-items:center;box-shadow:0 3px 12px -3px rgba(107,32,87,.6)}
+.logo-ico svg{width:15px;height:15px;fill:#fff}
+.logo-txt{font-weight:800;font-size:13px;letter-spacing:.04em;color:#fff}
+.logo-txt .sep{color:var(--ink3);font-weight:400;margin:0 5px}
+.logo-txt em{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:italic}
+.conn-badge{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3)}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--ink3);flex-shrink:0;transition:background .3s}
+.conn-dot.ok{background:#2DAF6A}
+.conn-dot.err{background:var(--acc)}
+
+/* MAIN LAYOUT */
+.main{width:100%;max-width:1100px;padding:28px 24px 60px;display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
+@media(max-width:860px){.main{grid-template-columns:1fr}}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--brd);border-radius:14px;overflow:hidden}
+.card-h{padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px}
+.card-h svg{width:15px;height:15px;color:var(--acc);flex-shrink:0}
+.card-h h2{font-size:13px;font-weight:700;color:var(--ink)}
+.card-h .badge{margin-left:auto;font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;background:var(--surf2);color:var(--ink3);padding:2px 8px;border-radius:100px}
+.card-body{padding:18px 20px}
+
+/* FORM FIELDS */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.label{font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:5px;display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
+.label .req{color:var(--acc)}
+.input{width:100%;background:var(--surf);border:1px solid var(--brd2);border-radius:7px;color:var(--ink);font-family:'Syne',sans-serif;font-size:12px;padding:8px 12px;transition:border-color .14s;outline:none}
+.input:focus{border-color:var(--acc)}
+.input::placeholder{color:var(--ink3)}
+textarea.input{resize:vertical;font-family:'DM Mono',monospace;font-size:11px;min-height:80px;line-height:1.6}
+
+/* TAG INPUT for recipients */
+.tag-wrap{min-height:38px;background:var(--surf);border:1px solid var(--brd2);border-radius:7px;padding:5px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;cursor:text;transition:border-color .14s}
+.tag-wrap:focus-within{border-color:var(--acc)}
+.tag{display:inline-flex;align-items:center;gap:4px;background:rgba(200,80,106,.15);border:1px solid rgba(200,80,106,.3);color:var(--acc);padding:2px 8px 2px 10px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap}
+.tag .rm{background:none;border:none;cursor:pointer;color:var(--acc);font-size:13px;line-height:1;padding:0;margin-left:2px;display:flex;align-items:center;opacity:.7}
+.tag .rm:hover{opacity:1}
+.tag-input{background:none;border:none;outline:none;color:var(--ink);font-family:'Syne',sans-serif;font-size:12px;min-width:160px;flex:1;padding:2px 4px}
+.tag-input::placeholder{color:var(--ink3)}
+.tag-hint{font-size:9.5px;color:var(--ink3);margin-top:3px}
+
+/* DROP ZONE */
+.dropz{border:2px dashed var(--brd2);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.dropz:hover,.dropz.over{border-color:var(--acc);background:rgba(200,80,106,.05)}
+.dropz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dropz svg{width:28px;height:28px;color:var(--acc);margin:0 auto 8px;display:block;opacity:.75}
+.dropz-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.dropz-sub{font-size:10px;color:var(--ink3)}
+.file-loaded{display:flex;align-items:center;gap:8px;background:rgba(29,122,74,.1);border:1px solid rgba(29,122,74,.25);border-radius:7px;padding:8px 12px;margin-top:8px;display:none}
+.file-loaded svg{width:13px;height:13px;color:#2DAF6A;flex-shrink:0}
+.file-loaded span{font-size:11px;color:#2DAF6A;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-loaded button{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:14px;line-height:1;padding:0}
+.file-loaded button:hover{color:var(--acc)}
+
+.or-sep{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace;letter-spacing:.1em}
+.or-sep::before,.or-sep::after{content:'';flex:1;height:1px;background:var(--brd2)}
+
+/* SEND BUTTON */
+.send-btn{width:100%;padding:13px;border-radius:9px;background:var(--grad);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .14s;margin-top:16px}
+.send-btn:hover:not(:disabled){opacity:.88}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+.send-btn svg{width:16px;height:16px}
+
+/* PREV BUTTON */
+.prev-btn{width:100%;padding:9px;border-radius:8px;background:transparent;border:1px solid var(--brd2);color:var(--ink2);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .14s;margin-top:8px}
+.prev-btn:hover{background:var(--surf);color:var(--ink)}
+.prev-btn svg{width:13px;height:13px}
+
+/* PREVIEW IFRAME */
+.prev-card{display:none}
+.prev-frame{width:100%;height:500px;border:none;border-radius:0 0 12px 12px;background:#fff;display:block}
+
+/* SIDEBAR */
+.smtp-info{display:flex;flex-direction:column;gap:8px}
+.smtp-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--brd)}
+.smtp-row:last-child{border-bottom:none}
+.smtp-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase}
+.smtp-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--ink2);text-align:right;word-break:break-all}
+
+/* HISTORY */
+.history{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.history::-webkit-scrollbar{width:3px}.history::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px}
+.hist-item{padding:10px 12px;background:var(--surf);border:1px solid var(--brd);border-radius:8px}
+.hist-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px}
+.hist-subj{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.hist-time{font-size:9.5px;font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0}
+.hist-to{font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-badge{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:100px}
+.hist-badge.ok{background:rgba(29,122,74,.12);color:#2DAF6A}
+.hist-badge.err{background:rgba(200,80,106,.12);color:var(--acc)}
+
+/* STATUS BANNER */
+.banner{display:none;padding:12px 16px;border-radius:9px;font-size:12px;font-weight:600;margin-top:14px;align-items:center;gap:8px}
+.banner svg{width:15px;height:15px;flex-shrink:0}
+.banner.ok{background:rgba(29,122,74,.12);border:1px solid rgba(29,122,74,.25);color:#2DAF6A;display:flex}
+.banner.err{background:rgba(200,80,106,.12);border:1px solid rgba(200,80,106,.25);color:#E8728A;display:flex}
+.banner.info{background:rgba(42,90,138,.12);border:1px solid rgba(42,90,138,.25);color:#7ABADD;display:flex}
+
+/* NOTIF TOAST */
+.notif{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surf);border:1px solid var(--brd2);border-radius:9px;padding:10px 20px;font-size:12px;color:var(--ink);font-weight:600;box-shadow:0 8px 28px -8px rgba(0,0,0,.5);z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* LOADING SPINNER */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite}
+
+/* EMPTY HISTORY */
+.hist-empty{padding:20px;text-align:center;font-size:11px;color:var(--ink3)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/"><div class="logo-ico"><svg viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L21 10l-6.91 2.74L14.18 20 12 13.27 9.82 20 7.09 12.74 3 10l6.91-1.74z"/></svg></div><div class="logo-txt">ANABION<span class="sep">/</span><em>Email Sender</em></div></a>
+  <div class="conn-badge">
+    <div class="conn-dot" id="conn-dot"></div>
+    <span id="conn-label">Connecting…</span>
+  </div>
+</div>
+
+<div class="main">
+  <!-- LEFT COLUMN: COMPOSE FORM -->
+  <div>
+    <!-- Recipients -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <h2>Compose Email</h2>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="label">To <span class="req">*</span></div>
+          <div class="tag-wrap" id="to-wrap" onclick="document.getElementById('to-input').focus()">
+            <input class="tag-input" id="to-input" placeholder="email@domain.com, press Enter or comma to add" autocomplete="off">
+          </div>
+          <div class="tag-hint">Enter email addresses separated by comma or Enter</div>
+        </div>
+        <div class="field">
+          <div class="label">CC <span style="font-size:9px;opacity:.5;text-transform:none;letter-spacing:0">(optional)</span></div>
+          <div class="tag-wrap" id="cc-wrap" onclick="document.getElementById('cc-input').focus()">
+            <input class="tag-input" id="cc-input" placeholder="cc@domain.com" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Subject <span class="req">*</span></div>
+          <input type="text" class="input" id="subject" placeholder="Email subject line">
+        </div>
+        <div class="field">
+          <div class="label">BCC <span style="font-size:9px;opacity:.5;text-transform:none;letter-spacing:0">(blind carbon copy, optional)</span></div>
+          <div class="tag-wrap" id="bcc-wrap" onclick="document.getElementById('bcc-input').focus()">
+            <input class="tag-input" id="bcc-input" placeholder="bcc@domain.com" autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HTML Content -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <h2>HTML Template</h2>
+        <span class="badge">CSS auto-inlined on send</span>
+      </div>
+      <div class="card-body">
+        <!-- File upload -->
+        <div class="dropz" id="dropz">
+          <input type="file" id="html-file" accept=".html,.htm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
+          <div class="dropz-title" id="dropz-title">Drop HTML file here</div>
+          <div class="dropz-sub">or click to browse &nbsp;·&nbsp; .html / .htm</div>
+        </div>
+        <div class="file-loaded" id="file-loaded">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="file-name"></span>
+          <button onclick="clearFile()" title="Remove">✕</button>
+        </div>
+
+        <div class="or-sep">or paste HTML directly</div>
+
+        <div class="field">
+          <textarea class="input" id="html-code" rows="8" placeholder="Paste your HTML email code here…&#10;&#10;All &lt;style&gt; blocks will be automatically inlined for Outlook compatibility."></textarea>
+        </div>
+
+        <button class="prev-btn" id="prev-btn" onclick="doPreview()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview Email
+        </button>
+
+        <div class="banner" id="send-banner"></div>
+
+        <button class="send-btn" id="send-btn" onclick="doSend()">
+          <svg id="send-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Email
+        </button>
+      </div>
+    </div>
+
+    <!-- Preview card -->
+    <div class="card prev-card" id="prev-card">
+      <div class="card-h">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <h2>Email Preview</h2>
+        <button onclick="closePreview()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;padding:0">✕</button>
+      </div>
+      <iframe class="prev-frame" id="prev-frame" sandbox="allow-same-origin"></iframe>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: SMTP INFO + HISTORY -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <!-- SMTP Status -->
+    <div class="card">
+      <div class="card-h">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <h2>SMTP Configuration</h2>
+      </div>
+      <div class="card-body">
+        <div class="smtp-info">
+          <div class="smtp-row"><span class="smtp-label">Host</span><span class="smtp-val">smtp.office365.com</span></div>
+          <div class="smtp-row"><span class="smtp-label">Port</span><span class="smtp-val">587 (STARTTLS)</span></div>
+          <div class="smtp-row"><span class="smtp-label">From</span><span class="smtp-val" style="font-size:10px">Travel & Expense</span></div>
+          <div class="smtp-row"><span class="smtp-label">Address</span><span class="smtp-val" style="font-size:9.5px">travel-expense-noreply<br>@anabion.com</span></div>
+          <div class="smtp-row"><span class="smtp-label">Status</span><span id="smtp-status" class="smtp-val">Checking…</span></div>
+        </div>
+        <button onclick="checkConnection()" style="width:100%;margin-top:12px;padding:7px;border-radius:7px;background:var(--surf2);border:1px solid var(--brd2);color:var(--ink2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .14s">Verify Connection</button>
+      </div>
+    </div>
+
+    <!-- Send History -->
+    <div class="card">
+      <div class="card-h">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <h2>Send History</h2>
+        <span class="badge" id="hist-count">0 sent</span>
+      </div>
+      <div class="card-body" style="padding:12px">
+        <div class="history" id="history">
+          <div class="hist-empty">No emails sent yet in this session</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+      <div class="card-h">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h2>How it works</h2>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div style="width:20px;height:20px;border-radius:50%;background:var(--grad);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;flex-shrink:0;margin-top:1px">1</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.5">Upload your HTML template or paste code. <b style="color:var(--ink)">All CSS styles are auto-inlined</b> so formatting is preserved in every email client.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div style="width:20px;height:20px;border-radius:50%;background:var(--grad);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;flex-shrink:0;margin-top:1px">2</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.5">Add recipients (To, CC, BCC) and subject line.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div style="width:20px;height:20px;border-radius:50%;background:var(--grad);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;flex-shrink:0;margin-top:1px">3</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.5">Click <b style="color:var(--ink)">Send Email</b> — delivered via Office 365 SMTP with full HTML formatting.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const toTags = [], ccTags = [], bccTags = [];
+let selectedFile = null;
+let sendHistory = [];
+
+function notify(m, d=3000){const n=document.getElementById('notif');n.textContent=m;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),d);}
+function setBanner(type,html){const b=document.getElementById('send-banner');b.className='banner '+type;b.innerHTML=html;}
+function hideBanner(){document.getElementById('send-banner').className='banner';}
+
+// ─── TAG INPUT ────────────────────────────────────────────────────────────────
+function setupTagInput(inputId, wrapId, tags){
+  const input = document.getElementById(inputId);
+  const wrap = document.getElementById(wrapId);
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+      e.preventDefault();
+      addTag(input.value.trim().replace(/,$/,''), tags, wrap, input);
+    } else if (e.key === 'Backspace' && input.value === '' && tags.length > 0) {
+      removeTag(tags.length - 1, tags, wrap, input);
+    }
+  });
+  input.addEventListener('blur', () => {
+    if (input.value.trim()) addTag(input.value.trim(), tags, wrap, input);
+  });
+  input.addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    text.split(/[,;\n\s]+/).forEach(email => {
+      const trimmed = email.trim();
+      if (trimmed) addTag(trimmed, tags, wrap, input);
+    });
+  });
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function addTag(email, tags, wrap, input) {
+  if (!email) return;
+  if (!isValidEmail(email)) { notify('Invalid email: ' + email); return; }
+  if (tags.includes(email)) { notify('Already added: ' + email); input.value = ''; return; }
+  tags.push(email);
+  const tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.innerHTML = `<span>${email}</span><button class="rm" type="button" onclick="removeTagByEmail('${email}',${tags===toTags?'toTags':'ccTags'},document.getElementById('${wrap.id}'),document.getElementById('${input.id}'))">✕</button>`;
+  wrap.insertBefore(tag, input);
+  input.value = '';
+}
+
+function removeTagByEmail(email, tags, wrap, input) {
+  const idx = tags.indexOf(email);
+  if (idx >= 0) removeTag(idx, tags, wrap, input);
+}
+
+function removeTag(idx, tags, wrap, input) {
+  tags.splice(idx, 1);
+  const tagEls = wrap.querySelectorAll('.tag');
+  if (tagEls[idx]) tagEls[idx].remove();
+}
+
+setupTagInput('to-input', 'to-wrap', toTags);
+setupTagInput('cc-input', 'cc-wrap', ccTags);
+setupTagInput('bcc-input', 'bcc-wrap', bccTags);
+
+// ─── FILE UPLOAD ──────────────────────────────────────────────────────────────
+const dropz = document.getElementById('dropz');
+dropz.addEventListener('dragover', e=>{e.preventDefault();dropz.classList.add('over');});
+dropz.addEventListener('dragleave', ()=>dropz.classList.remove('over'));
+dropz.addEventListener('drop', e=>{e.preventDefault();dropz.classList.remove('over');const f=e.dataTransfer.files[0];if(f)setFile(f);});
+document.getElementById('html-file').addEventListener('change', e=>{if(e.target.files[0])setFile(e.target.files[0]);e.target.value='';});
+
+function setFile(file) {
+  if (!file.name.match(/\.html?$/i)) { notify('Please select an .html file'); return; }
+  selectedFile = file;
+  document.getElementById('dropz-title').textContent = '✓ ' + file.name;
+  document.getElementById('file-name').textContent = file.name + ' · ' + Math.round(file.size/1024) + ' KB';
+  document.getElementById('file-loaded').style.display = 'flex';
+  document.getElementById('html-code').placeholder = 'File loaded — HTML code area disabled when file is selected';
+  document.getElementById('html-code').disabled = true;
+  notify('File loaded: ' + file.name);
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('dropz-title').textContent = 'Drop HTML file here';
+  document.getElementById('file-loaded').style.display = 'none';
+  document.getElementById('html-code').disabled = false;
+  document.getElementById('html-code').placeholder = 'Paste your HTML email code here…';
+}
+
+// ─── CONNECTION CHECK ─────────────────────────────────────────────────────────
+async function checkConnection() {
+  document.getElementById('smtp-status').textContent = 'Checking…';
+  document.getElementById('conn-dot').className = 'conn-dot';
+  document.getElementById('conn-label').textContent = 'Connecting…';
+  try {
+    const r = await fetch('/api/verify');
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('smtp-status').innerHTML = '<span style="color:#2DAF6A;font-weight:700">✓ Connected</span>';
+      document.getElementById('conn-dot').className = 'conn-dot ok';
+      document.getElementById('conn-label').textContent = 'Connected';
+    } else {
+      document.getElementById('smtp-status').innerHTML = '<span style="color:var(--acc)">✗ Error</span>';
+      document.getElementById('conn-dot').className = 'conn-dot err';
+      document.getElementById('conn-label').textContent = 'SMTP Error';
+      notify('SMTP: ' + data.message);
+    }
+  } catch(e) {
+    document.getElementById('smtp-status').innerHTML = '<span style="color:var(--acc)">Server offline</span>';
+    document.getElementById('conn-dot').className = 'conn-dot err';
+    document.getElementById('conn-label').textContent = 'Server offline';
+  }
+}
+
+// ─── PREVIEW ──────────────────────────────────────────────────────────────────
+async function doPreview() {
+  const htmlCode = document.getElementById('html-code').value.trim();
+  if (!selectedFile && !htmlCode) { notify('Upload or paste HTML first'); return; }
+
+  const fd = new FormData();
+  if (selectedFile) {
+    fd.append('htmlFile', selectedFile);
+  } else {
+    fd.append('htmlContent', htmlCode);
+  }
+
+  try {
+    const r = await fetch('/api/preview', { method:'POST', body:fd });
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('prev-card').style.display = 'block';
+      document.getElementById('prev-frame').srcdoc = data.html;
+      document.getElementById('prev-card').scrollIntoView({behavior:'smooth', block:'nearest'});
+    } else {
+      notify('Preview error: ' + data.message);
+    }
+  } catch(e) {
+    notify('Server error — is the server running?');
+  }
+}
+
+function closePreview() {
+  document.getElementById('prev-card').style.display = 'none';
+}
+
+// ─── SEND EMAIL ───────────────────────────────────────────────────────────────
+async function doSend() {
+  // Validate
+  if (toTags.length === 0) {
+    // Check if there's something typed but not added
+    const typed = document.getElementById('to-input').value.trim();
+    if (typed) {
+      addTag(typed, toTags, document.getElementById('to-wrap'), document.getElementById('to-input'));
+    }
+    if (toTags.length === 0) { setBanner('err','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Please add at least one recipient</span>'); return; }
+  }
+
+  const subject = document.getElementById('subject').value.trim();
+  if (!subject) { setBanner('err','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Please enter a subject line</span>'); return; }
+
+  const htmlCode = document.getElementById('html-code').value.trim();
+  if (!selectedFile && !htmlCode) { setBanner('err','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Please upload or paste HTML content</span>'); return; }
+
+  // UI: loading state
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="spin" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-dasharray="28" stroke-dashoffset="10"/></svg>Sending…';
+  setBanner('info','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-dasharray="28" stroke-dashoffset="10"/></svg><span>Sending via Office 365 SMTP…</span>');
+
+  const fd = new FormData();
+  fd.append('to', toTags.join(','));
+  fd.append('cc', ccTags.join(','));
+  fd.append('subject', subject);
+    // add typed but not yet tagged bcc
+  const bccTyped = document.getElementById('bcc-input').value.trim();
+  if (bccTyped) addTag(bccTyped, bccTags, document.getElementById('bcc-wrap'), document.getElementById('bcc-input'));
+  fd.append('bcc', bccTags.join(','));
+
+  if (selectedFile) {
+    fd.append('htmlFile', selectedFile);
+  } else {
+    fd.append('htmlContent', htmlCode);
+  }
+
+  try {
+    const r = await fetch('/api/send', { method:'POST', body:fd });
+    const data = await r.json();
+
+    if (data.ok) {
+      setBanner('ok',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg><span>✓ Email sent successfully to <b>${toTags.join(', ')}</b></span>`);
+      addHistory(subject, toTags.join(', '), true);
+      notify('✓ Sent to ' + toTags.join(', '));
+    } else {
+      setBanner('err',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Send failed: ${data.message}</span>`);
+      addHistory(subject, toTags.join(', '), false, data.message);
+      notify('Error: ' + data.message);
+    }
+  } catch(e) {
+    setBanner('err','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Server error — is the server running? ' + e.message + '</span>');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Email';
+  }
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────────
+function addHistory(subject, to, ok, error) {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+  sendHistory.unshift({ subject, to, ok, error, time });
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history');
+  document.getElementById('hist-count').textContent = sendHistory.length + ' sent';
+  if (sendHistory.length === 0) {
+    el.innerHTML = '<div class="hist-empty">No emails sent yet in this session</div>';
+    return;
+  }
+  el.innerHTML = sendHistory.map(h => `
+    <div class="hist-item">
+      <div class="hist-top">
+        <div class="hist-subj">${h.subject}</div>
+        <span class="hist-badge ${h.ok?'ok':'err'}">${h.ok?'✓ Sent':'✗ Failed'}</span>
+        <span class="hist-time">${h.time}</span>
+      </div>
+      <div class="hist-to">To: ${h.to}${h.error ? '<br><span style="color:var(--acc);font-size:9.5px">'+h.error+'</span>' : ''}</div>
+    </div>
+  `).join('');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+checkConnection();
+</script>
+</body>
+</html>
